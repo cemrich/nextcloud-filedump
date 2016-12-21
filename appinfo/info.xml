@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+
+<info>
+	<id>filedump</id>
+	<name>File Dump</name>
+	<version>0.0.1</version>
+	<licence>MIT</licence>
+	<author>Christine Coenen</author>
+
+	<dependencies>
+		<nextcloud min-version="11" max-version="11" />
+	</dependencies>
+
+	<description>Auto-Export all your contacts, calendars and todos into files.</description>
+	<category>tools</category>
+	<admin>admin</admin>
+	<namespace>FileDump</namespace>
+
+	<website>https://github.com/cemrich/nextcloud-filedump/issues</website>
+	<bugs>https://github.com/cemrich/nextcloud-filedump/issues</bugs>
+	<repository type="git">https://github.com/cemrich/nextcloud-filedump</repository>
+</info>
