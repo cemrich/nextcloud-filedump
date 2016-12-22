@@ -57,19 +57,19 @@ class BackupService {
 		// TODO: add timestamp to directory and delete old directories
 		$backupDir = $this->configService->getBackupBaseDirectory() . '/contacts';
 
-		// create new backup folder if it not exists
-		if (!file_exists($backupDir)) {
-			if (!mkdir($backupDir)) {
-				throw new Exception("Cannot create backup dir: $backupDir");
-			}
-		}
+		$this->createDirectory($backupDir);
 
 		// TODO: let user decide which address book to backup
-		// TODO: save address books in subdirectory
 		$statement = $this->db->prepareQuery(
-			"SELECT uri, carddata, value AS fullname
-			FROM oc_cards, oc_cards_properties
+			"SELECT
+				carddata,
+				principaluri,
+				oc_cards.uri AS cards_uri,
+				oc_addressbooks.uri AS address_book_uri,
+				value AS fullname
+			FROM oc_cards, oc_cards_properties, oc_addressbooks
 			WHERE oc_cards.id = oc_cards_properties.cardid
+				AND oc_addressbooks.id = oc_cards.addressbookid
 				AND name = 'FN'
 			ORDER BY fullname;"
 		);
@@ -77,13 +77,16 @@ class BackupService {
 		$statement->execute(array());
 
 		while ($row = $statement->fetch()) {
-			$filename = $this->sanitizeFilename("{$row['fullname']} - {$row['uri']}");
-			file_put_contents($backupDir . '/' . $filename, $row['carddata']);
+			$filename = $this->sanitizeFilename("{$row['fullname']} - {$row['cards_uri']}");
+			$directory = $backupDir . '/' . $this->sanitizeFilename($row['principaluri']) . ' - ' . $row['address_book_uri'];
+			$this->createDirectory($directory);
+			file_put_contents($directory . '/' .$filename, $row['carddata']);
 		}
 	}
 
 	/**
-	 * Returns the id of the user or the name of the app if no user is present (for example in a cronjob)
+	 * Returns the id of the user or the name of the app if no user is present
+	 * (for example in a cronjob)
 	 *
 	 * @return string
 	 */
@@ -93,5 +96,16 @@ class BackupService {
 
 	private function sanitizeFilename($filename) {
 		return str_replace(array('/'), '_', $filename);
+	}
+
+	/**
+	 * create new backup folder if it not exists
+	 */
+	private function createDirectory($path) {
+		if (!file_exists($path)) {
+			if (!mkdir($path)) {
+				throw new Exception("Cannot create backup dir: $path");
+			}
+		}
 	}
 }
