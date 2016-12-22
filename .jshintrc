@@ -1,0 +1,12 @@
+{
+	"globals": {
+		"t": false,
+		"OC": false,
+		"OCdialogs": false
+	},
+
+	"browser": true,
+	"jquery": true,
+	"quotmark": "single",
+	"strict": "implied"
+}
