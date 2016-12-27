@@ -44,8 +44,9 @@ class BackupService {
 
 	public function createDBBackup() {
 		try {
+			// TODO: add timestamp to directory and delete old directories
 			$baseDir = $this->configService->getBackupBaseDirectory();
-			$this->exportContacts($baseDir);
+			$this->exportAddressBooks($baseDir);
 			$this->exportCalendars($baseDir);
 			// TODO: export TODOs
 		} catch (Exception $e) {
@@ -54,38 +55,45 @@ class BackupService {
 		}
 	}
 
-	private function exportContacts($baseDir) {
-		// TODO: add timestamp to directory and delete old directories
+	private function exportAddressBooks($baseDir) {
 		$backupDir = $baseDir . '/contacts';
 		$this->createDirectory($backupDir);
 
 		// TODO: let user decide which address book to backup
 		$statement = $this->db->prepareQuery(
-			"SELECT
-				carddata,
-				principaluri,
-				oc_cards.uri AS cards_uri,
-				oc_addressbooks.uri AS address_book_uri,
-				value AS fullname
-			FROM oc_cards, oc_cards_properties, oc_addressbooks
-			WHERE oc_cards.id = oc_cards_properties.cardid
-				AND oc_addressbooks.id = oc_cards.addressbookid
-				AND name = 'FN'
-			ORDER BY fullname;"
+			"SELECT id, uri, principaluri FROM oc_addressbooks;"
 		);
 
 		$statement->execute(array());
 
 		while ($row = $statement->fetch()) {
-			$filename = $this->sanitizeFilename("{$row['fullname']} - {$row['cards_uri']}");
-			$directory = $backupDir . '/' . $this->sanitizeFilename($row['principaluri']) . ' - ' . $row['address_book_uri'];
-			$this->createDirectory($directory);
-			file_put_contents($directory . '/' .$filename, $row['carddata']);
+			$this->exportAddressBook(
+				$backupDir,
+				$row['id'],
+				$row['principaluri'],
+				$row['uri']);
 		}
 	}
 
+	private function exportAddressBook($backupDir, $id, $principalUri, $bookUri) {
+		$statement = $this->db->prepareQuery(
+			"SELECT carddata FROM oc_cards WHERE addressbookid = ?;"
+		);
+
+		$statement->execute(array($id));
+
+		$vcfData = '';
+		while ($row = $statement->fetch()) {
+			$vcfData .= trim($row['carddata']) . "\n\n";
+		}
+
+		$filename =
+			$this->sanitizeFilename($principalUri) . '__' .
+			$this->sanitizeFilename($bookUri) . '.vcf';
+		file_put_contents($backupDir . '/' . $filename, $vcfData);
+	}
+
 	private function exportCalendars($baseDir) {
-		// TODO: add timestamp to directory and delete old directories
 		$backupDir = $baseDir . '/calendars';
 		$this->createDirectory($backupDir);
 
