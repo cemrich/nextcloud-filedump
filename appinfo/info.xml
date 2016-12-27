@@ -11,6 +11,11 @@
 		<nextcloud min-version="11" max-version="11" />
 	</dependencies>
 
+	<!-- cron jobs -->
+	<cron>
+		<job>OCA\FileDump\Jobs\BackupJob</job>
+	</cron>
+
 	<description>Auto-Export all your contacts, calendars and todos into files.</description>
 	<category>tools</category>
 	<admin>admin</admin>
