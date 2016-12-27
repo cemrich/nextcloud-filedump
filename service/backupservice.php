@@ -90,44 +90,50 @@ class BackupService {
 
 		// TODO: let user decide which calendars to backup
 		$statement = $this->db->prepareQuery(
-			"SELECT
-					calendardata,
-					firstoccurence,
-					principaluri,
-					oc_calendarobjects.uri AS object_uri,
-					oc_calendars.uri AS calendar_uri
-				FROM oc_calendarobjects, oc_calendars
-				WHERE oc_calendars.id = oc_calendarobjects.calendarid
-					AND componenttype = 'VEVENT';"
+			"SELECT id, uri, principaluri FROM oc_calendars;"
 		);
 
-		$calendars = array();
-
 		$statement->execute(array());
+
 		while ($row = $statement->fetch()) {
-			$uri = $row['calendar_uri'];
+			$this->exportCalendar(
+				$backupDir,
+				$row['id'],
+				$row['principaluri'],
+				$row['uri']);
+		}
+	}
 
-			if (!isset($calendars[$uri])) {
-				$directory = $backupDir . '/' . $this->sanitizeFilename($row['principaluri']);
-				$this->createDirectory($directory);
+	private function exportCalendar($backupDir, $id, $principalUri, $calendarUri) {
+		// create backup dir for user
+		$directory = $backupDir . '/' . $this->sanitizeFilename($principalUri);
+		$this->createDirectory($directory);
 
-				$calendars[$uri]['directory'] = $directory;
-				$calendars[$uri]['data'] =
+		// save as ical
+		$icalData =
 "BEGIN:VCALENDAR
 PRODID:-//Nextcloud calendar v1.4.1
 VERSION:2.0
 CALSCALE:GREGORIAN\n";
-			}
 
-			$data = array_slice(explode("\n", $row['calendardata']), 4, -1);
-			$calendars[$uri]['data'] .= join("\n", $data);
+		$statement = $this->db->prepareQuery(
+			"SELECT calendardata
+				FROM oc_calendarobjects
+				WHERE calendarid = ?
+					AND componenttype = 'VEVENT';"
+		);
+
+		$statement->execute(array($id));
+
+		while ($row = $statement->fetch()) {
+			$matches = array();
+			preg_match_all("/^BEGIN:VEVENT.*^END:VEVENT/sm", $row['calendardata'], $matches);
+			$icalData .= $matches[0][0] . "\n";
 		}
 
-		foreach ($calendars as $uri => $calendar) {
-			$filename = $this->sanitizeFilename($uri) . '.ics';
-			$data = $calendar['data'] . "\nEND:VCALENDAR";
-			file_put_contents($calendar['directory'] . '/' . $filename, $data);
-		}
+		$filename = $this->sanitizeFilename($calendarUri) . '.ics';
+		$icalData .= 'END:VCALENDAR';
+		file_put_contents($directory . '/' . $filename, $icalData);
 	}
 
 	/**
