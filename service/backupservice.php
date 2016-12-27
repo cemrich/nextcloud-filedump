@@ -44,8 +44,9 @@ class BackupService {
 
 	public function createDBBackup() {
 		try {
-			$this->exportContacts();
-			$this->exportCalendars();
+			$baseDir = $this->configService->getBackupBaseDirectory();
+			$this->exportContacts($baseDir);
+			$this->exportCalendars($baseDir);
 			// TODO: export TODOs
 		} catch (Exception $e) {
 			$this->logger->error($this->getCallerName() . ' thew an exception: ' . $e->getMessage(), $this->logContext);
@@ -53,9 +54,9 @@ class BackupService {
 		}
 	}
 
-	private function exportContacts() {
+	private function exportContacts($baseDir) {
 		// TODO: add timestamp to directory and delete old directories
-		$backupDir = $this->configService->getBackupBaseDirectory() . '/contacts';
+		$backupDir = $baseDir . '/contacts';
 		$this->createDirectory($backupDir);
 
 		// TODO: let user decide which address book to backup
@@ -83,9 +84,9 @@ class BackupService {
 		}
 	}
 
-	private function exportCalendars() {
+	private function exportCalendars($baseDir) {
 		// TODO: add timestamp to directory and delete old directories
-		$backupDir = $this->configService->getBackupBaseDirectory() . '/calendars';
+		$backupDir = $baseDir . '/calendars';
 		$this->createDirectory($backupDir);
 
 		// TODO: let user decide which calendars to backup
