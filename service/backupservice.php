@@ -106,11 +106,6 @@ class BackupService {
 	}
 
 	private function exportCalendar($backupDir, $id, $principalUri, $calendarUri) {
-		// create backup dir for user
-		$directory = $backupDir . '/' . $this->sanitizeFilename($principalUri);
-		$this->createDirectory($directory);
-
-		// save as ical
 		$icalData =
 "BEGIN:VCALENDAR
 PRODID:-//Nextcloud calendar v1.4.1
@@ -132,9 +127,12 @@ CALSCALE:GREGORIAN\n";
 			$icalData .= $matches[0][0] . "\n";
 		}
 
-		$filename = $this->sanitizeFilename($calendarUri) . '.ics';
 		$icalData .= 'END:VCALENDAR';
-		file_put_contents($directory . '/' . $filename, $icalData);
+
+		$filename =
+			$this->sanitizeFilename($principalUri) . '__' .
+			$this->sanitizeFilename($calendarUri) . '.ics';
+		file_put_contents($backupDir . '/' . $filename, $icalData);
 	}
 
 	/**
