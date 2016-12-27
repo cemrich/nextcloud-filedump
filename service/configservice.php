@@ -30,15 +30,16 @@ class ConfigService {
 	 */
 	public function getBackupBaseDirectory() {
 		$backupDir = $this->getDataDir() . '/filedump';
-
-		// create new base backup folder if it not exists
-		if (!file_exists($backupDir)) {
-			if (!mkdir($backupDir)) {
-				throw new Exception( "Cannot create base backup dir: $backupDir" );
-			}
-		}
-
+		$this->createDirectory($backupDir);
 		return $backupDir;
+	}
+
+	/**
+	 * @return string
+	 * @throws Exception
+	 */
+	public function getTimestampPrefix() {
+		return date("Y-m-d_H:i:s_");
 	}
 
 	/**
@@ -68,5 +69,16 @@ class ConfigService {
 	 */
 	public function setSystemValue($key, $value) {
 		return $this->owncloudConfig->setSystemValue($key, $value);
+	}
+
+	/**
+	 * create new backup folder if it not exists
+	 */
+	private function createDirectory($path) {
+		if (!file_exists($path)) {
+			if (!mkdir($path)) {
+				throw new Exception("Cannot create backup dir: $path");
+			}
+		}
 	}
 }

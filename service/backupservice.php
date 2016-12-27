@@ -44,10 +44,12 @@ class BackupService {
 
 	public function createDBBackup() {
 		try {
-			// TODO: add timestamp to directory and delete old directories
+			// TODO: delete old directories
 			$baseDir = $this->configService->getBackupBaseDirectory();
-			$this->exportAddressBooks($baseDir);
-			$this->exportCalendars($baseDir);
+			$timestampPrefix = $this->configService->getTimestampPrefix();
+
+			$this->exportAddressBooks($baseDir, $timestampPrefix);
+			$this->exportCalendars($baseDir, $timestampPrefix);
 			// TODO: export TODOs
 		} catch (Exception $e) {
 			$this->logger->error($this->getCallerName() . ' thew an exception: ' . $e->getMessage(), $this->logContext);
@@ -55,8 +57,8 @@ class BackupService {
 		}
 	}
 
-	private function exportAddressBooks($baseDir) {
-		$backupDir = $baseDir . '/contacts';
+	private function exportAddressBooks($baseDir, $timestampPrefix) {
+		$backupDir = $baseDir . '/' . $timestampPrefix . 'contacts';
 		$this->createDirectory($backupDir);
 
 		// TODO: let user decide which address book to backup
@@ -93,8 +95,8 @@ class BackupService {
 		file_put_contents($backupDir . '/' . $filename, $vcfData);
 	}
 
-	private function exportCalendars($baseDir) {
-		$backupDir = $baseDir . '/calendars';
+	private function exportCalendars($baseDir, $timestampPrefix) {
+		$backupDir = $baseDir . '/' . $timestampPrefix . 'calendars';
 		$this->createDirectory($backupDir);
 
 		// TODO: let user decide which calendars to backup
