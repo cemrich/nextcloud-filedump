@@ -45,7 +45,7 @@ class BackupService {
 	public function createDBBackup() {
 		try {
 			$this->exportContacts();
-			// TODO: export calendars
+			$this->exportCalendars();
 			// TODO: export TODOs
 		} catch (Exception $e) {
 			$this->logger->error($this->getCallerName() . ' thew an exception: ' . $e->getMessage(), $this->logContext);
@@ -56,7 +56,6 @@ class BackupService {
 	private function exportContacts() {
 		// TODO: add timestamp to directory and delete old directories
 		$backupDir = $this->configService->getBackupBaseDirectory() . '/contacts';
-
 		$this->createDirectory($backupDir);
 
 		// TODO: let user decide which address book to backup
@@ -81,6 +80,53 @@ class BackupService {
 			$directory = $backupDir . '/' . $this->sanitizeFilename($row['principaluri']) . ' - ' . $row['address_book_uri'];
 			$this->createDirectory($directory);
 			file_put_contents($directory . '/' .$filename, $row['carddata']);
+		}
+	}
+
+	private function exportCalendars() {
+		// TODO: add timestamp to directory and delete old directories
+		$backupDir = $this->configService->getBackupBaseDirectory() . '/calendars';
+		$this->createDirectory($backupDir);
+
+		// TODO: let user decide which calendars to backup
+		$statement = $this->db->prepareQuery(
+			"SELECT
+					calendardata,
+					firstoccurence,
+					principaluri,
+					oc_calendarobjects.uri AS object_uri,
+					oc_calendars.uri AS calendar_uri
+				FROM oc_calendarobjects, oc_calendars
+				WHERE oc_calendars.id = oc_calendarobjects.calendarid
+					AND componenttype = 'VEVENT';"
+		);
+
+		$calendars = array();
+
+		$statement->execute(array());
+		while ($row = $statement->fetch()) {
+			$uri = $row['calendar_uri'];
+
+			if (!isset($calendars[$uri])) {
+				$directory = $backupDir . '/' . $this->sanitizeFilename($row['principaluri']);
+				$this->createDirectory($directory);
+
+				$calendars[$uri]['directory'] = $directory;
+				$calendars[$uri]['data'] =
+"BEGIN:VCALENDAR
+PRODID:-//Nextcloud calendar v1.4.1
+VERSION:2.0
+CALSCALE:GREGORIAN\n";
+			}
+
+			$data = array_slice(explode("\n", $row['calendardata']), 4, -1);
+			$calendars[$uri]['data'] .= join("\n", $data);
+		}
+
+		foreach ($calendars as $uri => $calendar) {
+			$filename = $this->sanitizeFilename($uri) . '.ics';
+			$data = $calendar['data'] . "\nEND:VCALENDAR";
+			file_put_contents($calendar['directory'] . '/' . $filename, $data);
 		}
 	}
 
