@@ -63,7 +63,9 @@ class BackupService {
 
 		// TODO: let user decide which address book to backup
 		$statement = $this->db->prepareQuery(
-			"SELECT id, uri, principaluri FROM oc_addressbooks;"
+			"SELECT id, uri, principaluri
+				FROM oc_addressbooks
+				WHERE principaluri != 'principals/system/system';"
 		);
 
 		$statement->execute(array());
@@ -101,7 +103,9 @@ class BackupService {
 
 		// TODO: let user decide which calendars to backup
 		$statement = $this->db->prepareQuery(
-			"SELECT id, uri, principaluri FROM oc_calendars;"
+			"SELECT id, uri, principaluri
+				FROM oc_calendars
+				WHERE principaluri != 'principals/system/system';"
 		);
 
 		$statement->execute(array());
