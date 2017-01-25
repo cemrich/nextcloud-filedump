@@ -39,7 +39,7 @@ class ConfigService {
 	 * @throws Exception
 	 */
 	public function getTimestampPrefix() {
-		return date("Y-m-d_H:i:s_");
+		return date("Y-m-d_H-i-s_");
 	}
 
 	/**
